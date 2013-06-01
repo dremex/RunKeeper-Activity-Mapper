@@ -1,26 +1,29 @@
 #!/usr/bin/python
-# TODO: 2013-05-07-1215.gpx is malformed, premature </trkseg> closure, try catch to ignore
 
 import pygmaps
 import zipfile
 import re
 import argparse
+import xml.parsers.expat
 from xml.dom import minidom
 
 RED = "#FF0000"
 GREEN = "#00FF00"
 BLUE = "#0000FF"
+ORANGE = "#FF8C00"
 
 def activity_color(activity_type):
 	if activity_type == "Cycling":
 		return RED
 	elif activity_type == "Walking":
 		return GREEN
-	else:
+	elif activity_type == "Running":
 		return BLUE
+	else:
+		return ORANGE
 
 parser = argparse.ArgumentParser()
-parser.add_argument("-i", help="file containing your activities")
+parser.add_argument("-i", required=True, help="zip file containing your activities")
 args = parser.parse_args()
 
 # TODO: Figure out what the center should be
@@ -35,7 +38,12 @@ with zipfile.ZipFile(args.i, "r") as zfile:
 
 	# TODO: Setup layers for each activity type
 	# TODO: Take flag from user input to only map certain activity types
-	xmldoc = minidom.parse(zfile.open(name))
+	try:
+		xmldoc = minidom.parse(zfile.open(name))
+	except xml.parsers.expat.ExpatError:
+		print "---Error parsing file, skipping"
+		continue
+		
 	itemlist = xmldoc.getElementsByTagName('trkpt')
 	
 	activityName = xmldoc.getElementsByTagName('name')[0].firstChild.nodeValue
